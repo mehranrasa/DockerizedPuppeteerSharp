@@ -3,16 +3,10 @@
     "DockerizedPuppeteerSharp": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Production"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:8085"
-    },
-    "Docker": {
-      "commandName": "Docker",
-      "launchBrowser": true,
-      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/weatherforecast",
-      "publishAllPorts": true
     }
   },
   "$schema": "https://json.schemastore.org/launchsettings.json",

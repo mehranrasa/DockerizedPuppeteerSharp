@@ -1,4 +1,5 @@
 ﻿using PuppeteerSharp;
+using System.Runtime.InteropServices;
 
 namespace DockerizedPuppeteerSharp.Services
 {
@@ -9,41 +10,58 @@ namespace DockerizedPuppeteerSharp.Services
 
         public async Task<IBrowser> GetBrowserAsync(string? proxyUrl = null, string? timeZone = null)
         {
+            if (browser is not null && browser.IsConnected && !browser.IsClosed)
+                return browser;
+
             var launchOptions = new LaunchOptions()
             {
-                ExecutablePath = "/usr/bin/google-chrome-stable",
                 Headless = true,
                 IgnoreHTTPSErrors = true,
                 LogProcess = true,
                 UserDataDir = "chrome_dir",
-                Args = new[] { "--no-sandbox" }
+                Args = new[] 
+                { 
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-infobars",
+                    "--disable-dev-shm-usage" 
+                }
             };
-
             if (!string.IsNullOrEmpty(proxyUrl))
             {
-                //sample proxy url: socks5://localhost:1080
                 _ = launchOptions.Args.Append(string.Concat("--proxy-server=", proxyUrl));
+                //sample proxy url: socks5://localhost:1080
             }
 
             if (!string.IsNullOrEmpty(timeZone))
             {
-                //sample time zone: Asia/Tehran
                 launchOptions.Env.Add("TZ", timeZone);
+                //sample time zone: Asia/Tehran
             }
 
-            browser ??= await Puppeteer.LaunchAsync(launchOptions);
-            return browser;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                //download chrome binaries on windows
+                await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
+            }
+            else 
+            {
+                //assuming chrome is already installed on host machine
+                launchOptions.ExecutablePath = "/usr/bin/google-chrome-stable";
+            }
+
+            return browser = await Puppeteer.LaunchAsync(launchOptions);
         }
 
         public async Task<IBrowser> GetBrowserAsync(LaunchOptions launchOptions)
         {
-            browser ??= await Puppeteer.LaunchAsync(launchOptions);
+            browser = await GetBrowserAsync();
             return browser;
         }
 
         public async Task<IPage> GetNewPageAsync()
         {
-            browser ??= await GetBrowserAsync();
+            browser = await GetBrowserAsync();
 
             var page = await browser.NewPageAsync();
             await page.SetUserAgentAsync(userAgent);
@@ -52,16 +70,7 @@ namespace DockerizedPuppeteerSharp.Services
                 Width = 1360,
                 Height = 720
             });
-
             return page;
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            if (browser is not null)
-                await browser.CloseAsync();
-
-            GC.SuppressFinalize(this);
         }
     }
 }
