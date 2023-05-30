@@ -19,7 +19,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     var response = await page.GoToAsync("https://google.com",
         WaitUntilNavigation.DOMContentLoaded | WaitUntilNavigation.Networkidle2);
 
-    response.Headers.ToList().ForEach(h => Console.WriteLine(h.Key, '\t', h.Value));
+    response.Headers.ToList().ForEach(h => Console.WriteLine(h.Key + '=' + h.Value));
 }
 
 // Configure the HTTP request pipeline.
